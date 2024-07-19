@@ -1,22 +1,52 @@
-import React, { useState } from 'react';
-import Login from './components/login/login';
-import Content from './components/contents/contents';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
+import AuthPage from './pages/authpage';
+import Home from './pages/homepage';
+import Profile from './pages/profile';
+import AdminDashboard from './pages/admindashboard';
+import { AuthProvider, useAuth } from './context/authcontent';
+import GoogleLoginPage from './components/auth/googleLogin';
+
+const PrivateRoute = ({ children, role }) => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+
+  if (role && user.role !== role) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
+};
 
 function App() {
-  const [token, setToken] = useState(null);
-
-  const handleLoginSuccess = (token) => {
-    setToken(token);
-  };
-
   return (
-    <div>
-      {token ? (
-        <Content token={token} />
-      ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      )}
-    </div>
+    <AuthProvider>
+      <Routes>
+      <Route path="/" element={<GoogleLoginPage />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute role="learner">
+              <Profile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <PrivateRoute role="admin">
+              <AdminDashboard />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 
