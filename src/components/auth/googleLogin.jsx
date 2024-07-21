@@ -17,7 +17,10 @@ const GoogleLoginPage = () => {
         lastname: decode.family_name,
         email: decode.email,
       };
-      const response = await axios.post(`${apiUrl}/api/auth/google-login`, { email:googleLoginDetails.email, firstName:googleLoginDetails.firstname, lastName:googleLoginDetails.lastname});
+      const response = await axios.post(`${apiUrl}/api/auth/google-login`, { email: googleLoginDetails.email, firstName: googleLoginDetails.firstname, lastName: googleLoginDetails.lastname });
+      console.log('Response data:', response.data);
+      const { uuid } = response.data.user;
+      console.log('Received UUID:', uuid);
       navigate('/home')
       return response;
 

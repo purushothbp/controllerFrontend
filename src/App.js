@@ -26,13 +26,21 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-      <Route path="/" element={<GoogleLoginPage />} />
+        <Route path="/" element={<GoogleLoginPage />} />
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route
-          path="/profile"
+          path="/edit-profile"
           element={
             <PrivateRoute role="learner">
+              <Profile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/edit-profile"
+          element={
+            <PrivateRoute role="guest">
               <Profile />
             </PrivateRoute>
           }

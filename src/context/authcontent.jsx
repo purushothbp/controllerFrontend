@@ -1,5 +1,8 @@
+// src/context/authcontent.js
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import Cookies from 'js-cookie';
+import jwt from 'jsonwebtoken';
 
 const AuthContext = createContext();
 
@@ -7,43 +10,35 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = Cookies.get('authToken');
     if (token) {
-      axios.get('/api/auth/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(response => {
-        setUser(response.data);
-      }).catch(() => {
-        localStorage.removeItem('token');
-      });
+      const decoded = jwt.decode(token);
+      setUser(decoded);
     }
   }, []);
 
-  const login = async (email, password) => {
-    const response = await axios.post('/api/auth/login', { email, password });
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.user);
-  };
+  const login = async (userData) => {
+    // Perform login logic here (e.g., fetch from API)
 
-  const signup = async (username, email, password) => {
-    const response = await axios.post('/api/auth/signup', { username, email, password });
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.user);
-  };
+    // Example user data after successful login
+    const userData = {
+      uuid: '958fc32b-6bb9-4715-b7ff-89f1d968b70e',
+      role: 'guest',
+    };
 
-  const googleLogin = async (tokenId) => {
-    const response = await axios.post('http://localhost:3003/api/auth/google-login', { tokenId });
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.user);
+    const token = jwt.sign(userData, 'your_jwt_secret'); // Replace 'your_jwt_secret' with your actual secret key
+    Cookies.set('authToken', token);
+
+    setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    Cookies.remove('authToken');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, googleLogin, logout }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -52,5 +47,3 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
-
-export default AuthContext;

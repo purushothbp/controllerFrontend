@@ -1,24 +1,11 @@
+// src/components/PersistentAppBar.js
+
 import React, { useState } from 'react';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  InputBase,
-  Container,
-  Grid,
-  Menu,
-  MenuItem,
-  IconButton,
-  Avatar,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  Button,
-} from '@mui/material';
+import { AppBar, Toolbar, Typography, InputBase, Menu, MenuItem, IconButton, Avatar, Dialog, DialogActions, DialogContent, DialogContentText, Button } from '@mui/material';
 import { Search as SearchIcon, Person4Sharp } from '@mui/icons-material';
 import { alpha, styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/authcontent';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -59,15 +46,11 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const ContentList = ({ contents }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const PersistentAppBar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
-
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
+  const { user, logout } = useAuth();
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -87,13 +70,8 @@ const ContentList = ({ contents }) => {
 
   const handleConfirmLogout = () => {
     handleDialogClose();
-    console.log('Logout confirmed');
+    logout();
     navigate('/');
-  };
-
-  const handleLogout = () => {
-    handleDialogClose();
-    handleLogoutClick();
   };
 
   const handleEditProfile = () => {
@@ -101,19 +79,23 @@ const ContentList = ({ contents }) => {
     navigate('/edit-profile');
   };
 
-  const filteredContents = contents.filter(
-    (content) =>
-      content.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      content.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleUserManagement = () => {
+    handleMenuClose();
+    navigate('/admin/users');
+  };
+
+  const handleContentManagement = () => {
+    handleMenuClose();
+    navigate('/admin/content');
+  };
 
   return (
-    <div>
-      <AppBar position="fixed">
-        <Toolbar>
-          <Typography variant="h6" noWrap style={{ flexGrow: 1 }}>
-            Product List
-          </Typography>
+    <AppBar position="fixed">
+      <Toolbar>
+        <Typography variant="h6" noWrap style={{ flexGrow: 1 }}>
+          {user && user.role === 'admin' ? 'Admin Dashboard' : 'Product List'}
+        </Typography>
+        {user && (user.role === 'guest' || user.role === 'learner') && (
           <Search>
             <SearchIconWrapper>
               <SearchIcon />
@@ -121,54 +103,33 @@ const ContentList = ({ contents }) => {
             <StyledInputBase
               placeholder="Search"
               inputProps={{ 'aria-label': 'search' }}
-              value={searchQuery}
-              onChange={handleSearchChange}
             />
+            {/* Implement voice assistant for typing */}
           </Search>
-          <IconButton edge="end" onClick={handleProfileMenuOpen} color="inherit">
-            <Person4Sharp />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            keepMounted
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleEditProfile}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-      <Container style={{ marginTop: '100%' }}>
-        <Grid container spacing={3}>
-          {filteredContents.map((content) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
-              key={content._id}
-              onClick={() => navigate(`/product/${content._id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div>
-                <Avatar
-                  alt={content.name}
-                  src={content.imageUrl}
-                  style={{ width: '100%', height: 'auto', borderRadius: '10px' }}
-                />
-                <Typography variant="h6">{content.name}</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Price: ${content.price}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {content.description}
-                </Typography>
-              </div>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+        )}
+        <IconButton edge="end" onClick={handleProfileMenuOpen} color="inherit">
+          <Person4Sharp />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          keepMounted
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          {user && (user.role === 'guest' || user.role === 'learner') ? (
+            <>
+              <MenuItem onClick={handleEditProfile}>View Profile</MenuItem>
+              <MenuItem onClick={handleLogoutClick}>Logout</MenuItem>
+            </>
+          ) : user && user.role === 'admin' ? (
+            <>
+              <MenuItem onClick={handleUserManagement}>User Management</MenuItem>
+              <MenuItem onClick={handleContentManagement}>Content Management</MenuItem>
+              <MenuItem onClick={handleLogoutClick}>Logout</MenuItem>
+            </>
+          ) : null}
+        </Menu>
+      </Toolbar>
       <Dialog
         open={dialogOpen}
         onClose={handleDialogClose}
@@ -189,8 +150,8 @@ const ContentList = ({ contents }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </AppBar>
   );
 };
 
-export default ContentList;
+export default PersistentAppBar;

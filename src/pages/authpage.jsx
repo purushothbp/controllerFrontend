@@ -1,15 +1,11 @@
 import React from 'react';
-import Signup from '../components/auth/signup';
-import Login from '../components/auth/login';
-import GoogleLogin from '../components/auth/googleLogin';
+import Profile from './profile';
 
 const AuthPage = () => {
   return (
     <div>
       <h1>Authentication</h1>
-      <Signup />
-      <Login />
-      <GoogleLogin />
+      <Profile/>
     </div>
   );
 };
