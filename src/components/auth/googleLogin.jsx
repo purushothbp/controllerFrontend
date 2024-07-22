@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const GoogleLoginPage = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -17,15 +18,19 @@ const GoogleLoginPage = () => {
         lastname: decode.family_name,
         email: decode.email,
       };
-      const response = await axios.post(`${apiUrl}/api/auth/google-login`, { email: googleLoginDetails.email, firstName: googleLoginDetails.firstname, lastName: googleLoginDetails.lastname });
-      console.log('Response data:', response.data);
-      const { uuid } = response.data.user;
-      console.log('Received UUID:', uuid);
-      navigate('/home')
-      return response;
+      const response = await axios.post(`${apiUrl}/api/auth/google-login`, googleLoginDetails);
 
+      const { uuid, role } = response.data.user;
+      const token = response.data.token;
+
+      // Store user data and token in cookies
+      Cookies.set('uuid', uuid, { expires: 1 });
+      Cookies.set('role', role, { expires: 1 });
+      Cookies.set('token', token, { expires: 1 });
+
+      navigate('/home');
     } catch (error) {
-      console.log("error", error);
+      console.error('Google login failed', error);
     }
   };
 

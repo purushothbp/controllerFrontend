@@ -1,8 +1,6 @@
-// src/context/authcontent.js
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 import Cookies from 'js-cookie';
-import jwt from 'jsonwebtoken';
 
 const AuthContext = createContext();
 
@@ -10,35 +8,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = Cookies.get('authToken');
-    if (token) {
-      const decoded = jwt.decode(token);
-      setUser(decoded);
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if (userData) {
+      setUser(userData);
     }
   }, []);
 
-  const login = async (userData) => {
-    // Perform login logic here (e.g., fetch from API)
-
-    // Example user data after successful login
-    const userData = {
-      uuid: '958fc32b-6bb9-4715-b7ff-89f1d968b70e',
-      role: 'guest',
-    };
-
-    const token = jwt.sign(userData, 'your_jwt_secret'); // Replace 'your_jwt_secret' with your actual secret key
-    Cookies.set('authToken', token);
-
-    setUser(userData);
+  const googleLogin = async (tokenId) => {
+    try {
+      const response = await axios.post('http://localhost:3003/api/auth/google-login', { tokenId });
+      const userDetails = { ...response.data.user, token: response.data.token };
+      localStorage.setItem('user', JSON.stringify(userDetails));
+      Cookies.set('token', response.data.token, { expires: 1 });
+      setUser(userDetails);
+    } catch (error) {
+      console.error('Google login failed:', error);
+    }
   };
 
   const logout = () => {
-    Cookies.remove('authToken');
+    localStorage.removeItem('user');
+    Cookies.remove('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );
@@ -47,3 +42,5 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
+
+export default AuthContext;

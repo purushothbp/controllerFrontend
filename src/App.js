@@ -8,14 +8,14 @@ import AdminDashboard from './pages/admindashboard';
 import { AuthProvider, useAuth } from './context/authcontent';
 import GoogleLoginPage from './components/auth/googleLogin';
 
-const PrivateRoute = ({ children, role }) => {
+const PrivateRoute = ({ children, roles = [] }) => {
   const { user } = useAuth();
 
   if (!user) {
     return <Navigate to="/auth" />;
   }
 
-  if (role && user.role !== role) {
+  if (roles.length > 0 && !roles.includes(user.role)) {
     return <Navigate to="/" />;
   }
 
@@ -30,17 +30,9 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route
-          path="/edit-profile"
+          path="/profile"
           element={
-            <PrivateRoute role="learner">
-              <Profile />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/edit-profile"
-          element={
-            <PrivateRoute role="guest">
+            <PrivateRoute roles={['learner', 'guest']}>
               <Profile />
             </PrivateRoute>
           }
@@ -48,7 +40,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <PrivateRoute role="admin">
+            <PrivateRoute roles={['admin']}>
               <AdminDashboard />
             </PrivateRoute>
           }
