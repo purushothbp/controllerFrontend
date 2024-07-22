@@ -98,7 +98,7 @@ const ContentList = ({ contents }) => {
 
   const handleEditProfile = () => {
     handleMenuClose();
-    navigate('/edit-profile');
+    navigate('/view_profile');
   };
 
   const filteredContents = contents.filter(

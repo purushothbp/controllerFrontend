@@ -1,16 +1,22 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/authcontent';
 import { getToken } from '../utils/authUtils';
+import { Card, Typography, Container } from '@mui/material';
+import AppBarLayout from '../components/appBAr/persistaneAppbar';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     const token = getToken();
-    if (token) {
-      console.log('Token:', token);
+    if (!token) {
+      console.log('Please login with proper details');
     }
-    console.log('User in Profile:', user);
+    if (user && user.email) {
+      const name = user.email.split('@')[0];
+      setUsername(name.charAt(0).toUpperCase() + name.slice(1)); // Capitalize the first letter
+    }
   }, [user]);
 
   if (!user) {
@@ -19,14 +25,18 @@ const Profile = () => {
 
   return (
     <div>
-      <h1>Authentication</h1>
-      <div>
-        <p>UUID: {user.uuid}</p>
-        <p>Username: {user.username}</p>
-        <p>Email: {user.email}</p>
-        <p>First Name: {user.firstName}</p>
-        <p>Last Name: {user.lastName}</p>
-      </div>
+      <AppBarLayout title="User Profile" />
+      <Container>
+        <Card style={{ padding: '20px', marginTop: '20px' }}>
+          <div>
+            <Typography variant="h5" sx={{ color: 'orange', fontWeight: 'bold' }}>
+              Hi {username}
+            </Typography>
+          </div>
+          <Typography variant="body1">E-Mail: {user.email}</Typography>
+          <Typography variant="body1">Role: {user.role}</Typography>
+        </Card>
+      </Container>
     </div>
   );
 };

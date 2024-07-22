@@ -30,7 +30,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route
-          path="/profile"
+          path="/view_profile"
           element={
             <PrivateRoute roles={['learner', 'guest']}>
               <Profile />

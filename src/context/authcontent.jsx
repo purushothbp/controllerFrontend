@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {jwtDecode} from 'jwt-decode';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
@@ -8,11 +9,29 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user'));
-    if (userData) {
-      setUser(userData);
+    const fetchUserDetails = async (token) => {
+      try {
+        const decoded = jwtDecode(token);
+        const response = await axios.get(`http://localhost:3003/api/users/${decoded.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user details:', error);
+        Cookies.remove('token');
+        setUser(null);
+      }
+    };
+
+    const token = Cookies.get('token');
+    if (token) {
+      fetchUserDetails(token);
     }
   }, []);
+
+
 
   const googleLogin = async (tokenId) => {
     try {
