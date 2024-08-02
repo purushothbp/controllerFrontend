@@ -7,6 +7,7 @@ import Profile from './pages/profile';
 import AdminDashboard from './pages/admindashboard';
 import { AuthProvider, useAuth } from './context/authcontent';
 import GoogleLoginPage from './components/auth/googleLogin';
+import ProductDetails from './pages/productdetails';
 
 const PrivateRoute = ({ children, roles = [] }) => {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ function App() {
         <Route path="/" element={<GoogleLoginPage />} />
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/products/:id" element={<ProductDetails />} />
         <Route
           path="/view_profile"
           element={

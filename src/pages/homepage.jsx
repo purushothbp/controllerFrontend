@@ -4,7 +4,8 @@ import ContentList from '../components/content/contentlist';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
-  const apiUrl = "http://localhost:3003"
+  const apiUrl = 'http://localhost:3003';
+  
   useEffect(() => {
     const fetchProducts = async () => {
       const response = await axios.get(`${apiUrl}/api/products`);

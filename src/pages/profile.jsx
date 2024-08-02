@@ -3,6 +3,7 @@ import AuthContext from '../context/authcontent';
 import { getToken } from '../utils/authUtils';
 import { Card, Typography, Container } from '@mui/material';
 import AppBarLayout from '../components/appBAr/persistaneAppbar';
+import ContentList from '../../src/components/content/contentlist';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
@@ -15,7 +16,7 @@ const Profile = () => {
     }
     if (user && user.email) {
       const name = user.email.split('@')[0];
-      setUsername(name.charAt(0).toUpperCase() + name.slice(1)); // Capitalize the first letter
+      setUsername(name.charAt(0).toUpperCase() + name.slice(1));
     }
   }, [user]);
 
@@ -36,6 +37,7 @@ const Profile = () => {
           <Typography variant="body1">E-Mail: {user.email}</Typography>
           <Typography variant="body1">Role: {user.role}</Typography>
         </Card>
+        <ContentList contents={[]} username={username} />  {/* Pass username */}
       </Container>
     </div>
   );

@@ -15,8 +15,14 @@ import {
   DialogContent,
   DialogContentText,
   Button,
+  TextField,
+  InputAdornment,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
-import { Search as SearchIcon, Person4Sharp } from '@mui/icons-material';
+import { Search as SearchIcon, Person4Sharp, Mic as MicIcon, Chat as ChatIcon, Send as SendIcon, Close as CloseIcon } from '@mui/icons-material';
 import { alpha, styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 
@@ -59,11 +65,21 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const ContentList = ({ contents }) => {
+const ContentList = ({ contents, username }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [conversation, setConversation] = useState(() => {
+    const savedConversation = localStorage.getItem('conversation');
+    return savedConversation ? JSON.parse(savedConversation) : [];
+  });
   const navigate = useNavigate();
+
+  const apiUrl = "http://localhost:3003";
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
@@ -75,6 +91,10 @@ const ContentList = ({ contents }) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleProductValues = (id) => {
+    navigate(`/products/${id}`);
   };
 
   const handleLogoutClick = () => {
@@ -101,9 +121,105 @@ const ContentList = ({ contents }) => {
     navigate('/view_profile');
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorderInstance = new MediaRecorder(stream);
+      setMediaRecorder(mediaRecorderInstance);
+      mediaRecorderInstance.start();
+
+      mediaRecorderInstance.ondataavailable = (e) => {
+        // No need to save chunks if not used
+      };
+
+      mediaRecorderInstance.onstop = () => {
+        const audioBlob = new Blob([], { type: 'audio/mp3' });
+        console.log("Audio Blob:", audioBlob);
+        sendAudioToBackend(audioBlob);
+      };
+
+      setRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setRecording(false);
+    }
+  };
+
+  const sendAudioToBackend = async (audioBlob) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.mp3');
+      console.log("FormData", formData);
+
+      const response = await fetch(`${apiUrl}/api/upload-audio`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Audio sent successfully', result);
+      } else {
+        const error = await response.json();
+        console.error('Error sending audio', error);
+      }
+    } catch (error) {
+      console.error("Error sending audio to backend:", error);
+    }
+  };
+
+  const handleChatOpen = () => {
+    setChatOpen(true);
+  };
+
+  const handleChatClose = () => {
+    setChatOpen(false);
+    setConversation([]);
+    localStorage.removeItem('conversation');
+  };
+
+  const handleChatChange = (event) => {
+    setChatMessage(event.target.value);
+  };
+
+  const handleChatSubmit = async () => {
+    const newMessage = { sender: 'user', text: chatMessage };
+    const updatedConversation = [...conversation, newMessage];
+    setConversation(updatedConversation);
+    localStorage.setItem('conversation', JSON.stringify(updatedConversation));
+
+    try {
+      const response = await fetch(`${apiUrl}/api/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: chatMessage }),
+      });
+
+      setTimeout(async () => {
+        const data = await response.json();
+        setChatMessage('');
+
+        const botMessage = { sender: 'bot', text: data.answer };
+        const updatedConversationWithBot = [...updatedConversation, botMessage];
+        setConversation(updatedConversationWithBot);
+        localStorage.setItem('conversation', JSON.stringify(updatedConversationWithBot));
+      }, 2000);
+    } catch (error) {
+      console.error("Error fetching chat responses:", error);
+    }
+  };
+
   const filteredContents = contents.filter(
     (content) =>
-      content.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -139,7 +255,7 @@ const ContentList = ({ contents }) => {
           </Menu>
         </Toolbar>
       </AppBar>
-      <Container style={{ marginTop: '100%' }}>
+      <Container style={{ marginTop: '100px' }}>
         <Grid container spacing={3}>
           {filteredContents.map((content) => (
             <Grid
@@ -148,16 +264,17 @@ const ContentList = ({ contents }) => {
               sm={6}
               md={4}
               key={content._id}
-              onClick={() => navigate(`/product/${content._id}`)}
+              onClick={() => handleProductValues(content._id)}
               style={{ cursor: 'pointer' }}
             >
               <div>
                 <Avatar
-                  alt={content.name}
+                  alt={content.title}
                   src={content.imageUrl}
                   style={{ width: '100%', height: 'auto', borderRadius: '10px' }}
                 />
-                <Typography variant="h6">{content.name}</Typography>
+                <Typography variant="h6">{content.title}</Typography>
+                <Typography variant="h6">{content.instructor}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   Price: ${content.price}
                 </Typography>
@@ -188,6 +305,99 @@ const ContentList = ({ contents }) => {
             Confirm
           </Button>
         </DialogActions>
+      </Dialog>
+      <IconButton
+        onClick={handleChatOpen}
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          backgroundColor: '#007bff',
+          color: 'white',
+        }}
+      >
+        <ChatIcon />
+      </IconButton>
+      <Dialog
+        open={chatOpen}
+        onClose={handleChatClose}
+        aria-labelledby="Any queries?"
+        aria-describedby="chat-dialog-description"
+        style={{ position: 'relative' }}
+      >
+        <DialogContent>
+          <IconButton
+            edge="end"
+            color="inherit"
+            onClick={handleChatClose}
+            style={{ position: 'absolute', top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6">How can I help you, {username}?</Typography>
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <List>
+              {conversation.map((message, index) => (
+                <ListItem
+                  key={index}
+                  style={{ justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start' }}
+                >
+                  <Paper
+                    style={{
+                      padding: '10px',
+                      backgroundColor: message.sender === 'user' ? '#e0e0e0' : '#007bff',
+                      color: message.sender === 'user' ? 'black' : 'white',
+                      alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                      marginBottom: '5px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <ListItemText primary={message.text} />
+                  </Paper>
+                </ListItem>
+              ))}
+            </List>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="chatMessage"
+              label="Type your message"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={chatMessage}
+              onChange={handleChatChange}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  handleChatSubmit();
+                }
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      onClick={recording ? stopRecording : startRecording}
+                      color="primary"
+                    >
+                      <MicIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <IconButton
+              edge="end"
+              onClick={handleChatSubmit}
+              color="primary"
+            >
+              <SendIcon />
+            </IconButton>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );

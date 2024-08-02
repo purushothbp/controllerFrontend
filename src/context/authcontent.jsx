@@ -11,6 +11,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUserDetails = async (token) => {
       try {
+        if(!token){
+          console.log('token is not valid');
+        }
         const decoded = jwtDecode(token);
         const response = await axios.get(`http://localhost:3003/api/users/${decoded.id}`, {
           headers: {
