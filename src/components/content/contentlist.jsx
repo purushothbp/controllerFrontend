@@ -129,7 +129,6 @@ const ContentList = ({ contents, username }) => {
       mediaRecorderInstance.start();
 
       mediaRecorderInstance.ondataavailable = (e) => {
-        // No need to save chunks if not used
       };
 
       mediaRecorderInstance.onstop = () => {
